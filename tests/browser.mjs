@@ -36,7 +36,7 @@ try{
  await page.screenshot({path:screenshotDir+'/my-world-desktop.png',fullPage:true});
  await page.locator('.sidebar [data-nav="collection"]').click();
  await page.locator('button[data-action="list"]').first().click();
- await page.locator('.sidebar [data-nav="market"]').click();
+ await page.locator('button[data-action="marketcancel"]').first().waitFor({timeout:15000});
  assert.ok(await page.locator('button[data-action="marketcancel"]').count()>=1);
  await page.screenshot({path:screenshotDir+'/community-market-desktop.png',fullPage:true});
  await page.locator('button[data-action="marketcancel"]').first().click();
