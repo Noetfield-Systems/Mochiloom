@@ -1,0 +1,22 @@
+name: PocketWorld production smoke
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  e2e:
+    name: Postgres-backed hosted journeys
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    concurrency:
+      group: pocketworld-production-e2e
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check public app, actual game, gift, marketplace and persistence
+        env:
+          POCKETWORLD_URL: https://pocketworld-github-web-production.up.railway.app
+        run: node tests/smoke.mjs
