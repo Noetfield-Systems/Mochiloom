@@ -20,7 +20,7 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - name: Exercise real desktop and mobile browsers
         env:
-          POCKETWORLD_URL: https://pocketworld-github-web-production.up.railway.app
+          POCKETWORLD_URL: https://mochiloom-world.up.railway.app
         run: node tests/browser.mjs
       - if: always()
         uses: actions/upload-artifact@v4
