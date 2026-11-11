@@ -18,9 +18,6 @@ try{
  });
  await page.goto(origin,{waitUntil:'domcontentloaded',timeout:30000});
  await page.waitForTimeout(1600);
- console.log('DEBUG initial URL',page.url(),'title',await page.title(),'errors',errors);
- console.log('DEBUG initial body',(await page.locator('body').innerText()).slice(0,1800));
- console.log('DEBUG app DOM',(await page.locator('#app').innerHTML()).slice(0,550));
  try { await page.locator('#join-form input[name="name"]').waitFor({timeout:10000}); }
  catch(err){ console.log('DEBUG errors after wait',errors);await page.screenshot({path:screenshotDir+'/initial-error.png',fullPage:true});throw err; }
  await page.screenshot({path:screenshotDir+'/landing-desktop.png',fullPage:true});
@@ -31,7 +28,7 @@ try{
  await page.screenshot({path:screenshotDir+'/dashboard-desktop.png',fullPage:true});
  await page.locator('.sidebar [data-nav="shop"]').click();
  await page.locator('button[data-action="buy"][data-value="moon-fox"]').click();
- await page.locator('.wallet').waitFor();
+ await page.waitForFunction(() => (document.querySelector('.wallet')?.textContent||'').includes('90'),{timeout:15000});
  assert.match(await page.locator('.wallet').innerText(),/90/);
  await page.locator('.sidebar [data-nav="world"]').click();
  await page.locator('button[data-action="equip"]').first().click();
