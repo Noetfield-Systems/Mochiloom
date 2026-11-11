@@ -257,7 +257,7 @@ import postgres from "postgres";
     return new Response(PAGE,{headers:{"Content-Type":"text/html; charset=utf-8","X-Content-Type-Options":"nosniff","Referrer-Policy":"strict-origin-when-cross-origin","X-Frame-Options":"DENY","Permissions-Policy":"camera=(),microphone=(),geolocation=()","Cache-Control":"no-cache"}});
   }
 
-  const PAGE = `<!doctype html>
+  const PAGE = String.raw`<!doctype html>
 <html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="theme-color" content="#131a38"/><meta name="description" content="PocketWorld is your little universe of games, collectibles, magical moments and meaningful gifts. Create your free world today."/><meta property="og:title" content="PocketWorld — A little world of your own"/><meta property="og:type" content="website"/><meta property="og:description" content="Free mini games, original collectibles, heartfelt gifts and a little world to call your own."/><meta name="twitter:card" content="summary"/><title>PocketWorld — A little world of your own</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap');
