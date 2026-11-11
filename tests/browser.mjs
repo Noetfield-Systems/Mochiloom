@@ -40,6 +40,7 @@ try{
  assert.ok(await page.locator('button[data-action="marketcancel"]').count()>=1);
  await page.screenshot({path:screenshotDir+'/community-market-desktop.png',fullPage:true});
  await page.locator('button[data-action="marketcancel"]').first().click();
+ await page.locator('button[data-action="list"]').first().waitFor({timeout:15000});
  await page.locator('.sidebar [data-nav="gifts"]').click();
  await page.locator('#card-form [name="recipient"]').fill('A special friend');
  await page.locator('#card-form [name="message"]').fill('Keep making tiny wonders!');
