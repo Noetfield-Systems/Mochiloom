@@ -77,9 +77,9 @@ import { makeLiveWorld } from "./live";
   }
   async function routes(req) {
     const url = new URL(req.url), path = url.pathname;
-    if(req.method === "POST" && req.headers.get("origin") && req.headers.get("origin") !== (process.env.PUBLIC_ORIGIN || "https://pocketworld-github-web-production.up.railway.app"))return error("Cross-origin request rejected.",403);
+    if(req.method === "POST" && req.headers.get("origin") && req.headers.get("origin") !== (process.env.PUBLIC_ORIGIN || "https://mochiloom-world.up.railway.app"))return error("Cross-origin request rejected.",403);
     if (path === "/health") {
-      try { await initialize(); await sql.unsafe("SELECT 1"); return response({ok:true,service:"pocketworld",storage:"postgres"}); }
+      try { await initialize(); await sql.unsafe("SELECT 1"); return response({ok:true,service:"mochiloom",storage:"postgres"}); }
       catch {return error("Storage temporarily unavailable",503);}
     }
     if (req.method === "GET" && path === "/api/card") {
