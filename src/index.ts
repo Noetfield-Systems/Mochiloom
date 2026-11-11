@@ -1,6 +1,8 @@
 import postgres from "postgres";
+import { makeLiveWorld } from "./live";
 (async function pocketworldApp() {
   const sql = process.env.DATABASE_URL ? postgres(process.env.DATABASE_URL, { max: 5, idle_timeout: 20 }) : null;
+  const live = makeLiveWorld(sql);
   const catalogue = [
     {id:"moon-fox",name:"Moon Fox",type:"Companion",price:90,icon:"🦊",tone:"peach",description:"A clever little companion for your world."},
     {id:"cloud-cat",name:"Cloud Cat",type:"Companion",price:120,icon:"🐱",tone:"lavender",description:"A soft-hearted cloud-dwelling friend."},
@@ -33,6 +35,7 @@ import postgres from "postgres";
       await sql.unsafe("CREATE INDEX IF NOT EXISTS pw_market_state_idx ON pw_market_listings(state,created_at DESC)");
       await sql.unsafe("CREATE TABLE IF NOT EXISTS pw_cards (id UUID PRIMARY KEY, owner_id UUID NOT NULL REFERENCES pw_users(id), recipient TEXT NOT NULL, message TEXT NOT NULL, theme TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW())");
       await sql.unsafe("CREATE TABLE IF NOT EXISTS pw_capsules (id UUID PRIMARY KEY, owner_id UUID NOT NULL REFERENCES pw_users(id), title TEXT NOT NULL, message TEXT NOT NULL, unlock_at TIMESTAMPTZ NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW())");
+      await live.init();
     })().catch(err => { initializePromise = null; throw err; });
     await initializePromise;
   }
@@ -60,13 +63,13 @@ import postgres from "postgres";
   async function snapshot(req) {
     const user = await auth(req);
     const market=await sql.unsafe("SELECT m.id,m.item_id,m.price_coins,m.seller_id,u.display_name AS seller_name,m.created_at FROM pw_market_listings m JOIN pw_users u ON u.id=m.seller_id WHERE m.state='active' AND ($1::boolean OR u.display_name NOT LIKE 'E2E-%') ORDER BY m.created_at DESC LIMIT 60",[Boolean(user?.display_name?.startsWith("E2E-"))]);
-    if (!user) return {ok:true,user:null,catalogue,market,inventory:[],gifts:[],cards:[],capsules:[],myListings:[],stats:await stats()};
+    if (!user) return {ok:true,user:null,catalogue,market,inventory:[],gifts:[],cards:[],capsules:[],myListings:[],stats:await stats(),live:await live.read(null)};
     const inventory = await sql.unsafe("SELECT id,item_id,created_at FROM pw_inventory WHERE user_id=$1 ORDER BY created_at DESC LIMIT 200", [user.id]);
     const gifts = await sql.unsafe("SELECT code,item_id,claimed_at,created_at FROM pw_gifts WHERE giver_id=$1 ORDER BY created_at DESC LIMIT 30", [user.id]);
     const cards = await sql.unsafe("SELECT id,recipient,message,theme,created_at FROM pw_cards WHERE owner_id=$1 ORDER BY created_at DESC LIMIT 30", [user.id]);
     const capsules = await sql.unsafe("SELECT id,title,unlock_at,created_at,CASE WHEN unlock_at<=NOW() THEN message ELSE NULL END AS message FROM pw_capsules WHERE owner_id=$1 ORDER BY created_at DESC LIMIT 30", [user.id]);
     const myListings=await sql.unsafe("SELECT id,item_id,price_coins,state,created_at FROM pw_market_listings WHERE seller_id=$1 ORDER BY created_at DESC LIMIT 20",[user.id]);
-    return {ok:true,user,inventory,gifts,cards,capsules,catalogue,market,myListings,stats:await stats()};
+    return {ok:true,user,inventory,gifts,cards,capsules,catalogue,market,myListings,stats:await stats(),live:await live.read(user.id,user.display_name.startsWith("E2E-"))};
   }
   async function stats(){
     const rows = await sql.unsafe("SELECT (SELECT count(*)::integer FROM pw_users WHERE display_name NOT LIKE 'E2E-%') AS members,(SELECT count(*)::integer FROM pw_cards c JOIN pw_users u ON u.id=c.owner_id WHERE u.display_name NOT LIKE 'E2E-%') AS cards,(SELECT count(*)::integer FROM pw_gifts g JOIN pw_users u ON u.id=g.giver_id WHERE g.claimed_at IS NOT NULL AND u.display_name NOT LIKE 'E2E-%') AS gifts");
@@ -89,6 +92,7 @@ import postgres from "postgres";
     if (path.startsWith("/api/")) {
       await initialize();
       if (req.method === "GET" && path === "/api/bootstrap") return response(await snapshot(req));
+      if (req.method === "GET" && path === "/api/live") { const viewer=await auth(req); return response(await live.read(viewer?.id||null,Boolean(viewer?.display_name?.startsWith("E2E-")))); }
       if (req.method !== "POST") return error("Method not allowed",405);
       const data = await input(req);
       if (path === "/api/guest") {
@@ -98,6 +102,7 @@ import postgres from "postgres";
         if (existing) return response({ok:true,already:true});
         const id=crypto.randomUUID(),token=crypto.randomUUID()+crypto.randomUUID();
         await sql.unsafe("INSERT INTO pw_users(id,display_name,session_hash) VALUES($1,$2,$3)",[id,name,await digest(token)]);
+        await live.publish({actorId:id,actorType:"member",actorName:name,kind:"welcome",detail:"A new explorer started their little world."}).catch(e=>console.warn("activity_publish",e.message));
         return response({ok:true,user_id:id},200,{"Set-Cookie":"pw_session="+token+"; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=31536000"});
       }
       if (path === "/api/recover") {
@@ -110,6 +115,16 @@ import postgres from "postgres";
       }
       const user=await auth(req);
       if(!user) return error("Create your world to continue.",401);
+      if(path==="/api/daily/claim") {
+        const result=await live.claim(user.id);
+        if(result.ok)await live.publish({actorId:user.id,actorType:"member",actorName:user.display_name,kind:"quest",detail:"An explorer collected their daily surprise."}).catch(e=>console.warn("activity_publish",e.message));
+        return response(result,result.ok?200:409);
+      }
+      if(path==="/api/market/visit")return response(await live.visit(user.id));
+      if(path==="/api/kindness"){
+        const result=await live.sendKindness(user.id,user.display_name,String(data.phrase||""));
+        return response(result,result.ok?200:409);
+      }
       if(path==="/api/recovery") {
         const code=(crypto.randomUUID()+crypto.randomUUID()).replaceAll("-","");
         await sql.unsafe("UPDATE pw_users SET recovery_hash=$1 WHERE id=$2",[await digest(code),user.id]);
@@ -157,6 +172,7 @@ import postgres from "postgres";
           await tx.unsafe("INSERT INTO pw_inventory(id,user_id,item_id) VALUES($1,$2,$3)",[iid,user.id,item.id]);
           return {ok:true,item_id:iid,coins:wallets[0].coins};
         });
+        if(result.ok)await live.publish({actorId:user.id,actorType:"member",actorName:user.display_name,kind:"collect",detail:"An explorer collected "+item.name+".",itemId:item.id}).catch(e=>console.warn("activity_publish",e.message));
         return response(result,result.ok?200:409);
       }
 
@@ -170,6 +186,7 @@ import postgres from "postgres";
           await tx.unsafe("INSERT INTO pw_market_listings(id,seller_id,item_id,price_coins) VALUES($1,$2,$3,$4)",[lid,user.id,owned[0].item_id,price]);
           return {ok:true,id:lid,price,item:owned[0].item_id};
         });
+        if(result.ok)await live.publish({actorId:user.id,actorType:"member",actorName:user.display_name,kind:"market",detail:"A community collectible was listed for exchange.",itemId:result.item}).catch(e=>console.warn("activity_publish",e.message));
         return response(result,result.ok?200:409);
       }
       if(path==="/api/market/buy") {
@@ -188,6 +205,7 @@ import postgres from "postgres";
           await tx.unsafe("INSERT INTO pw_inventory(id,user_id,item_id) VALUES($1,$2,$3)",[crypto.randomUUID(),user.id,listing.item_id]);
           return {ok:true,item:listing.item_id,coins:debit[0].coins,fee,proceeds};
         });
+        if(result.ok)await live.publish({actorId:user.id,actorType:"member",actorName:user.display_name,kind:"trade",detail:"Two explorers completed a collectible trade.",itemId:result.item}).catch(e=>console.warn("activity_publish",e.message));
         return response(result,result.ok?200:409);
       }
       if(path==="/api/market/cancel") {
@@ -211,6 +229,7 @@ import postgres from "postgres";
           await tx.unsafe("INSERT INTO pw_gifts(code,giver_id,item_id) VALUES($1,$2,$3)",[code,user.id,rows[0].item_id]);
           return {ok:true,code,item:rows[0].item_id};
         });
+        if(result.ok)await live.publish({actorId:user.id,actorType:"member",actorName:user.display_name,kind:"gift",detail:"A little collectible gift was wrapped for a friend.",itemId:result.item}).catch(e=>console.warn("activity_publish",e.message));
         return response(result,result.ok?200:409);
       }
       if(path==="/api/redeem") {
@@ -222,6 +241,7 @@ import postgres from "postgres";
           await tx.unsafe("INSERT INTO pw_inventory(id,user_id,item_id) VALUES($1,$2,$3)",[crypto.randomUUID(),user.id,rows[0].item_id]);
           return {ok:true,item:rows[0].item_id};
         });
+        if(result.ok)await live.publish({actorId:user.id,actorType:"member",actorName:user.display_name,kind:"gift",detail:"A little gift found a new home.",itemId:result.item}).catch(e=>console.warn("activity_publish",e.message));
         return response(result,result.ok?200:409);
       }
       if(path==="/api/card/create") {
@@ -231,6 +251,7 @@ import postgres from "postgres";
         if(recipient.length<2||message.length<3)return error("Add a recipient and a personal message.");
         const id=crypto.randomUUID();
         await sql.unsafe("INSERT INTO pw_cards(id,owner_id,recipient,message,theme) VALUES($1,$2,$3,$4,$5)",[id,user.id,recipient,message,theme]);
+        await live.publish({actorId:user.id,actorType:"member",actorName:user.display_name,kind:"card",detail:"An explorer made a greeting card."}).catch(e=>console.warn("activity_publish",e.message));
         return response({ok:true,id});
       }
       if(path==="/api/capsule/create") {
@@ -240,6 +261,7 @@ import postgres from "postgres";
         if(title.length<2||message.length<3||isNaN(date.getTime())||date.getTime()<Date.now()+60000||date.getTime()>Date.now()+5*365*86400000) return error("Choose a future date and a message.");
         const id=crypto.randomUUID();
         await sql.unsafe("INSERT INTO pw_capsules(id,owner_id,title,message,unlock_at) VALUES($1,$2,$3,$4,$5)",[id,user.id,title,message,date.toISOString()]);
+        await live.publish({actorId:user.id,actorType:"member",actorName:user.display_name,kind:"capsule",detail:"An explorer sealed a memory for the future."}).catch(e=>console.warn("activity_publish",e.message));
         return response({ok:true,id});
       }
       return error("Unknown endpoint",404);
@@ -347,6 +369,9 @@ await reload();if(S.data&&S.data.user){const gift=sessionStorage.getItem('pendin
 })();
 })();
 </script></body></html>`;
+  live.pulse().catch(e=>console.warn("helper_pulse_start",e.message));
+  const helperTimer=setInterval(()=>live.pulse().catch(e=>console.warn("helper_pulse",e.message)),60_000);
+  helperTimer.unref?.();
   Bun.serve({
     port:Number(process.env.PORT||3000),
     async fetch(req) {
