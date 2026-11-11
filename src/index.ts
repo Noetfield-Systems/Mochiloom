@@ -59,7 +59,7 @@ import postgres from "postgres";
   }
   async function snapshot(req) {
     const user = await auth(req);
-    const market=await sql.unsafe("SELECT m.id,m.item_id,m.price_coins,m.seller_id,u.display_name AS seller_name,m.created_at FROM pw_market_listings m JOIN pw_users u ON u.id=m.seller_id WHERE m.state='active' ORDER BY m.created_at DESC LIMIT 60");
+    const market=await sql.unsafe("SELECT m.id,m.item_id,m.price_coins,m.seller_id,u.display_name AS seller_name,m.created_at FROM pw_market_listings m JOIN pw_users u ON u.id=m.seller_id WHERE m.state='active' AND ($1::boolean OR u.display_name NOT LIKE 'E2E-%') ORDER BY m.created_at DESC LIMIT 60",[Boolean(user?.display_name?.startsWith("E2E-"))]);
     if (!user) return {ok:true,user:null,catalogue,market,inventory:[],gifts:[],cards:[],capsules:[],myListings:[],stats:await stats()};
     const inventory = await sql.unsafe("SELECT id,item_id,created_at FROM pw_inventory WHERE user_id=$1 ORDER BY created_at DESC LIMIT 200", [user.id]);
     const gifts = await sql.unsafe("SELECT code,item_id,claimed_at,created_at FROM pw_gifts WHERE giver_id=$1 ORDER BY created_at DESC LIMIT 30", [user.id]);
