@@ -3,7 +3,7 @@
   const fs = await import("node:fs");
   const vm = await import("node:vm");
   const {randomUUID} = await import("node:crypto");
-  const ROOT = process.env.POCKETWORLD_URL || "https://pocketworld-web-production.up.railway.app";
+  const ROOT = process.env.POCKETWORLD_URL || "https://mochiloom-world.up.railway.app";
   const source = fs.readFileSync(new URL("../src/index.ts", import.meta.url), "utf8");
   const script = source.match(/<script>([\s\S]+?)<\/script>/);
   assert.ok(script, "browser script exists");
