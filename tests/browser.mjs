@@ -17,7 +17,12 @@ try{
    else await d.dismiss();
  });
  await page.goto(origin,{waitUntil:'domcontentloaded',timeout:30000});
- await page.locator('#join-form input[name="name"]').waitFor({timeout:30000});
+ await page.waitForTimeout(1600);
+ console.log('DEBUG initial URL',page.url(),'title',await page.title(),'errors',errors);
+ console.log('DEBUG initial body',(await page.locator('body').innerText()).slice(0,1800));
+ console.log('DEBUG app DOM',(await page.locator('#app').innerHTML()).slice(0,550));
+ try { await page.locator('#join-form input[name="name"]').waitFor({timeout:10000}); }
+ catch(err){ console.log('DEBUG errors after wait',errors);await page.screenshot({path:screenshotDir+'/initial-error.png',fullPage:true});throw err; }
  await page.screenshot({path:screenshotDir+'/landing-desktop.png',fullPage:true});
  await page.locator('#join-form input[name="name"]').fill('E2E-browser-'+randomUUID().slice(0,7));
  await page.locator('#join-form button').click();
