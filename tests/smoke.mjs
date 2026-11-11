@@ -25,7 +25,7 @@
   const html=await fetch(ROOT+"/");
   assert.equal(html.status,200);
   const renderedHtml=await html.text();
-  assert.match(renderedHtml,/PocketWorld|pocketworld/i);
+  assert.match(renderedHtml,/Mochiloom|mochiloom/i);
   const renderedScript=renderedHtml.match(/<script>([\s\S]+?)<\/script>/);
   assert.ok(renderedScript,"deployed HTML has a browser script");
   new vm.Script(renderedScript[1]);
@@ -138,5 +138,35 @@
     assert.match(await legal.text(),/Noetfield Systems Inc/);
     console.log("PASS "+route+" public page");
   }
+  // Living world is backed by truthful studio helpers, not fabricated users.
+  const publicLive=requireSuccess(await api("/api/live"),"public living-world endpoint");
+  assert.equal(publicLive.json.brand,"Mochiloom");
+  assert.ok(publicLive.json.worlds.length>=6);
+  assert.equal(publicLive.json.helpers.length,4);
+  assert.ok(publicLive.json.events.some(e=>e.actor_type==="helper"));
+  assert.ok(publicLive.json.events.every(e=>!e.actor_name.startsWith("E2E-")));
+  assert.ok(publicLive.json.stats.members>=0);
+  assert.ok(publicLive.json.disclosure.includes("not real users"));
+  console.log("PASS official helpers and non-fabricated community statistics");
+  const claimed=requireSuccess(await api("/api/daily/claim",{},restored.cookie),"once-per-day free play coins");
+  assert.equal(claimed.json.coins,15);
+  assert.equal(claimed.json.xp,10);
+  const duplicateClaim=await api("/api/daily/claim",{},restored.cookie);
+  assert.equal(duplicateClaim.status,409);
+  console.log("PASS duplicate daily reward denied");
+  const visited=requireSuccess(await api("/api/market/visit",{},restored.cookie),"tracked market exploration");
+  assert.equal(visited.json.first_visit,true);
+  const visitedAgain=requireSuccess(await api("/api/market/visit",{},restored.cookie),"idempotent daily market visit");
+  assert.equal(visitedAgain.json.first_visit,false);
+  const kindness=requireSuccess(await api("/api/kindness",{phrase:"hello"},restored.cookie),"share predefined safe greeting");
+  assert.ok(kindness.json.text.includes("Hello"));
+  const replayKindness=await api("/api/kindness",{phrase:"hello"},restored.cookie);
+  assert.equal(replayKindness.status,409);
+  const unapprovedKindness=await api("/api/kindness",{phrase:"<script>alert(1)</script>"},restored.cookie);
+  assert.equal(unapprovedKindness.status,409);
+  const completed=requireSuccess(await api("/api/live",undefined,restored.cookie),"daily quest progress");
+  assert.equal(completed.json.progress.daily,true);
+  assert.equal(completed.json.progress.visit,true);
+  console.log("PASS safe kindness wall, idempotent visits and daily quests");
   console.log("E2E SUCCESS — no cash transactions or real customer accounts created");
 })().catch(err=>{console.error(err);process.exit(1);});
