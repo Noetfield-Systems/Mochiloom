@@ -34,6 +34,8 @@
   const unauth=requireSuccess(await api("/api/bootstrap"),"anonymous bootstrap");
   assert.equal(unauth.json.user,null);
   assert.ok(unauth.json.catalogue.length>=8);
+  assert.ok(unauth.json.market.every(x=>!x.seller_name.startsWith("E2E-")),"test-market listings must be hidden from public customers");
+  console.log("PASS synthetic E2E listings isolated from public market");
   const name="E2E-"+randomUUID().slice(0,8);
   const created=requireSuccess(await api("/api/guest",{name}),"guest registration");
   assert.ok(created.cookie?.startsWith("pw_session="));
