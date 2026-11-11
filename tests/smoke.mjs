@@ -24,7 +24,12 @@
   assert.equal(health.json.storage,"postgres");
   const html=await fetch(ROOT+"/");
   assert.equal(html.status,200);
-  assert.match(await html.text(),/PocketWorld|pocketworld/i);
+  const renderedHtml=await html.text();
+  assert.match(renderedHtml,/PocketWorld|pocketworld/i);
+  const renderedScript=renderedHtml.match(/<script>([\s\S]+?)<\/script>/);
+  assert.ok(renderedScript,"deployed HTML has a browser script");
+  new vm.Script(renderedScript[1]);
+  console.log("PASS deployed HTML browser script parses after server rendering");
   console.log("PASS public frontend");
   const unauth=requireSuccess(await api("/api/bootstrap"),"anonymous bootstrap");
   assert.equal(unauth.json.user,null);
