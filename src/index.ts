@@ -395,6 +395,25 @@ import { makeLiveWorld } from "./live";
 @media(max-width:850px){.mochi-layout{grid-template-columns:1fr}.mochi-hero .mochi-copy{max-width:66%}.mochi-hero .mochi-mascot{right:3%;width:175px;height:175px;top:24%}.mochi-hero .mochi-mascot svg{width:155px;height:155px}.mochi-snapshot{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:600px){.mochi-hero{padding:26px 21px;min-height:330px;align-items:flex-start}.mochi-hero .mochi-copy{max-width:95%}.mochi-hero h1{font-size:35px;max-width:300px}.mochi-hero p{max-width:265px}.mochi-hero .mochi-mascot{top:auto;bottom:10px;right:4%;width:125px;height:125px}.mochi-hero .mochi-mascot svg{height:115px;width:115px}.mochi-hero .mochi-buttons{margin-top:19px}.mochi-snapshot{grid-template-columns:repeat(2,1fr);gap:8px}.mochi-metric{padding:12px}.mochi-metric .mochi-metric-icon{min-width:38px;height:38px}.mochi-metric strong{font-size:19px}.mochi-layout{grid-template-columns:1fr}.mochi-feed,.mochi-side-card{padding:16px}.mochi-market-cards{grid-template-columns:1fr}.mochi-helpers{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.mochi-helper{padding:13px}.mochi-world-hero{grid-template-columns:1fr}.mochi-worlds{scroll-padding:0 8px}.mochi-public-grid{grid-template-columns:1fr}.mochi-filters{gap:3px}.mochi-filter{font-size:10px;padding:6px}}
 
+
+/* QA fix: the founder-era mobile welcome illustration must never obscure the hero heading. */
+@media(max-width:750px){
+  .auth-art{position:relative;min-height:305px;padding:20px 19px;display:flex;flex-direction:column;justify-content:flex-start;gap:13px}
+  .auth-art .brand{font-size:17px;position:relative;z-index:2}
+  .auth-art .eyebrow{font-size:9px;letter-spacing:1.4px;max-width:200px}
+  .auth-art h1{font-size:29px;line-height:1.07;letter-spacing:-1.25px;max-width:196px;margin-top:5px}
+  .auth-art p{font-size:11px!important;max-width:190px;line-height:1.4!important}
+  .auth-art .showpiece{position:absolute;right:8px;top:98px;width:125px;height:125px;display:grid;place-items:center;text-align:center;pointer-events:none}
+  .auth-art .showpiece svg{height:118px;width:118px}
+  .auth-art .mochi-status{position:relative;margin-top:auto;max-width:90%;font-size:10px}
+}
+@media(max-width:340px){
+  .auth-art h1{max-width:164px;font-size:25px}
+  .auth-art p{max-width:157px}
+  .auth-art .showpiece{width:100px;right:5px}
+  .auth-art .showpiece svg{width:95px;height:95px}
+}
+
 </style></head><body><div id="app"><main style="min-height:100vh;display:grid;place-items:center;padding:40px;background:linear-gradient(130deg,#f6f3ff,#ffedf0);font-family:Outfit,sans-serif"><section style="max-width:530px;text-align:center"><p style="font-size:13px;font-weight:800;letter-spacing:2px;color:#7966c9">POCKETWORLD · ORIGINAL DIGITAL PLAY</p><h1 style="font-size:clamp(44px,8vw,70px);line-height:1.07;letter-spacing:-2px">A little world.<br/>A lot of wonder.</h1><p style="font-size:16px;color:#686885;margin-top:18px">Play free games, meet magical friends, collect treasures and share thoughtful gifts.</p><p style="margin-top:25px;color:#7264c9">Create a free world in seconds.</p></section></main></div><script>
 (function(){
 const catNames={home:['Your universe','THE MAGIC IS ALREADY HERE'],explore:['Explore Worlds','ORIGINAL STUDIO WORLDS'],world:['My Little World','MAKE IT YOUR OWN'],play:['The Playground','PLAY • LEARN • EXPLORE'],shop:['Collectible Shop','YOUR LITTLE TREASURES'],market:['Community Market','TRADE ORIGINAL COLLECTIBLES'],collection:['My Collection','ALL THE THINGS YOU LOVE'],gifts:['Gifts & Cards','SHARE A LITTLE MAGIC'],capsules:['Time Capsules','MEMORIES FOR TOMORROW']};
