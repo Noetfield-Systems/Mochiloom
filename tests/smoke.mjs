@@ -49,7 +49,7 @@
   assert.equal(badItem.status,400);
   console.log("PASS unknown product refused");
   const browserOrigin=await fetch(ROOT+"/api/challenge",{method:"POST",headers:{"Content-Type":"application/json","Origin":ROOT,"Cookie":cookie},body:"{}"});
-  assert.equal(browserOrigin.status,200,"valid browser Origin must be accepted behind Railway reverse proxy");
+  assert.equal(browserOrigin.status,200,"valid browser Origin must be accepted behind Railway reverse proxy: "+await browserOrigin.text());
   const hostileOrigin=await fetch(ROOT+"/api/challenge",{method:"POST",headers:{"Content-Type":"application/json","Origin":"https://other.example","Cookie":cookie},body:"{}"});
   assert.equal(hostileOrigin.status,403,"foreign browser Origin must be rejected");
   console.log("PASS browser Origin acceptance and cross-site rejection");
