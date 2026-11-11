@@ -2,7 +2,7 @@ import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {mkdir} from 'node:fs/promises';
-const origin=process.env.POCKETWORLD_URL||'https://pocketworld-github-web-production.up.railway.app';
+const origin=process.env.POCKETWORLD_URL||'https://mochiloom-world.up.railway.app';
 const screenshotDir='artifacts/browser';
 await mkdir(screenshotDir,{recursive:true});
 const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
