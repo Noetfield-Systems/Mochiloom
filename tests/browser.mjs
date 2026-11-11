@@ -52,6 +52,13 @@ try{
  phone.on('pageerror',e=>errors.push(e.message));
  await phone.goto(origin,{waitUntil:'domcontentloaded',timeout:30000});
  await phone.locator('#join-form input').waitFor({timeout:20000});
+ const heroTitle=await phone.locator('.auth-art h1').boundingBox();
+ const heroMascot=await phone.locator('.auth-art .showpiece svg').boundingBox();
+ assert.ok(heroTitle && heroMascot,'mobile onboarding title and original mascot exist');
+ const overlapX=heroTitle.x<heroMascot.x+heroMascot.width && heroTitle.x+heroTitle.width>heroMascot.x;
+ const overlapY=heroTitle.y<heroMascot.y+heroMascot.height && heroTitle.y+heroTitle.height>heroMascot.y;
+ assert.ok(!(overlapX&&overlapY),'mobile signup mascot must not obscure the headline');
+ console.log('PASS mobile hero text and illustrated mascot do not overlap');
  await phone.screenshot({path:screenshotDir+'/landing-mobile.png',fullPage:true});
  await phone.locator('#join-form input').fill('E2E-mobile-'+randomUUID().slice(0,8));
  await phone.locator('#join-form button').click();
