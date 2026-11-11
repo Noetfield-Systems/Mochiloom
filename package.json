@@ -1,0 +1,14 @@
+{
+  "name": "pocketworld",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "bun src/index.ts",
+    "dev": "bun --watch src/index.ts",
+    "test": "node tests/smoke.mjs"
+  },
+  "dependencies": {
+    "postgres": "^3.4.7"
+  }
+}
