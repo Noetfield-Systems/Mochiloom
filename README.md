@@ -6,7 +6,7 @@ Our original virtual companions, worlds, skill games, digital collectibles, gift
 
 ## Live product
 
-Production Railway service: `pocketworld-github-web` (temporary technical hostname; brand is Mochiloom in the UI).
+Production Railway service: `pocketworld-github-web` (internal legacy ID). Public app: https://mochiloom-world.up.railway.app/ .
 
 ## Core stack
 
