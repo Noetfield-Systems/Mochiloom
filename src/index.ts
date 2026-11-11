@@ -74,7 +74,7 @@ import postgres from "postgres";
   }
   async function routes(req) {
     const url = new URL(req.url), path = url.pathname;
-    if(req.method === "POST" && req.headers.get("origin") && req.headers.get("origin") !== url.origin)return error("Cross-origin request rejected.",403);
+    if(req.method === "POST" && req.headers.get("origin") && req.headers.get("origin") !== (process.env.PUBLIC_ORIGIN || "https://pocketworld-github-web-production.up.railway.app"))return error("Cross-origin request rejected.",403);
     if (path === "/health") {
       try { await initialize(); await sql.unsafe("SELECT 1"); return response({ok:true,service:"pocketworld",storage:"postgres"}); }
       catch {return error("Storage temporarily unavailable",503);}
