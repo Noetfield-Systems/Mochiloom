@@ -1,0 +1,30 @@
+name: PocketWorld browser experience
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'tests/browser.mjs'
+      - '.github/workflows/browser-e2e.yml'
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright@1.56.1
+      - run: npx playwright install --with-deps chromium
+      - name: Exercise real desktop and mobile browsers
+        env:
+          POCKETWORLD_URL: https://pocketworld-github-web-production.up.railway.app
+        run: node tests/browser.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pocketworld-browser-screens
+          path: artifacts/browser/*.png
+          retention-days: 14
