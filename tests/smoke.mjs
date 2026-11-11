@@ -48,6 +48,11 @@
   const badItem=await api("/api/buy",{item:"not-an-item"},cookie);
   assert.equal(badItem.status,400);
   console.log("PASS unknown product refused");
+  const browserOrigin=await fetch(ROOT+"/api/challenge",{method:"POST",headers:{"Content-Type":"application/json","Origin":ROOT,"Cookie":cookie},body:"{}"});
+  assert.equal(browserOrigin.status,200,"valid browser Origin must be accepted behind Railway reverse proxy");
+  const hostileOrigin=await fetch(ROOT+"/api/challenge",{method:"POST",headers:{"Content-Type":"application/json","Origin":"https://other.example","Cookie":cookie},body:"{}"});
+  assert.equal(hostileOrigin.status,403,"foreign browser Origin must be rejected");
+  console.log("PASS browser Origin acceptance and cross-site rejection");
   const challenge=requireSuccess(await api("/api/challenge",{},cookie),"memory challenge");
   assert.match(challenge.json.sequence,/^[0-3]{5}$/);
   const played=requireSuccess(await api("/api/play",{id:challenge.json.id,answer:challenge.json.sequence},cookie),"correct game round");
